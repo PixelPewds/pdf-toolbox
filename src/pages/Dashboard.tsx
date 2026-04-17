@@ -1,8 +1,16 @@
-import { ImagePlus, PenTool, Combine, SplitSquareHorizontal, FileArchive } from 'lucide-react';
+import { ImagePlus, PenTool, Combine, SplitSquareHorizontal, FileArchive, LucideIcon } from 'lucide-react';
 import ToolCard from '../components/ui/tool-card';
 import styles from './dashboard.module.css';
 
-const tools = [
+interface ToolItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  to: string;
+}
+
+const tools: ToolItem[] = [
   {
     id: 'image-to-pdf',
     title: 'Image to PDF',

@@ -2,7 +2,7 @@
 
 A premium, privacy-focused suite of PDF manipulation tools that run **100% in your browser**. No servers, no uploads, no privacy compromises.
 
-![PDF Toolbox Preview](https://raw.githubusercontent.com/PixelPewds/pdf-toolkit/main/public/preview.png)
+![PDF Toolbox Preview](https://raw.githubusercontent.com/PixelPewds/pdf-toolbox/main/public/preview.png)
 
 ## ✨ Features
 
@@ -37,7 +37,7 @@ A premium, privacy-focused suite of PDF manipulation tools that run **100% in yo
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/PixelPewds/pdf-toolkit.git
+   git clone https://github.com/PixelPewds/pdf-toolbox.git
    ```
 2. Install dependencies:
    ```bash
