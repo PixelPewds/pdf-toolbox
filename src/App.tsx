@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/layout';
 import Dashboard from './pages/dashboard';
+import ImageToPdf from './pages/tools/image-to-pdf';
 
 function App() {
   return (
@@ -8,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          {/* Phase 2-5 Tool Routes will go here, currently Dashboard shows "Coming Soon" */}
+          <Route path="tools/image-to-pdf" element={<ImageToPdf />} />
         </Route>
       </Routes>
     </BrowserRouter>

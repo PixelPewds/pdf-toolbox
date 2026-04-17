@@ -60,7 +60,7 @@ export default function Dashboard() {
             description={tool.description}
             icon={tool.icon}
             to={tool.to}
-            isComingSoon={true} // Set all to coming soon for Phase 1 except Dashboard
+            isComingSoon={tool.id !== 'image-to-pdf'}
           />
         ))}
       </section>

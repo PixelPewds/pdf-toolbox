@@ -3,7 +3,7 @@
 ## Phase 1: Core Dashboard & Infrastructure [COMPLETED]
 **Goal:** Setup basic layout, routing, and a styling system based on glassmorphism and modern typography. Create the central hub where users select standard tools.
 
-## Phase 2: Image to PDF Converter
+## Phase 2: Image to PDF Converter [COMPLETED]
 **Goal:** Build a drag-and-drop file interface for converting PNGs and JPGs to PDF on the client-side using `pdf-lib` and canvas API.
 
 ## Phase 3: PDF Editor Module

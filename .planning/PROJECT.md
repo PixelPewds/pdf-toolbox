@@ -16,7 +16,7 @@ A suite of entirely client-side PDF modification tools built with React. It prov
 ### Active
 
 - [x] Create a dashboard selecting different PDF tools.
-- [ ] Image to PDF converter tool (e.g. PNG/JPG to PDF).
+- [x] Image to PDF converter tool (e.g. PNG/JPG to PDF).
 - [ ] PDF Merge tool (combine multiple PDFs).
 - [ ] PDF Split tool (select pages from a PDF to export).
 - [ ] PDF Compressor tool (best effort object stripping/scaling).
