@@ -49,26 +49,33 @@ const ImageToPdf: React.FC = () => {
     try {
       const pdfBytes = await convertImagesToPdf(selectedFiles);
       
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+      const filename = `toolbox-${new Date().getTime()}.pdf`;
+      const file = new File([pdfBytes], filename, { type: 'application/pdf' });
+      const url = URL.createObjectURL(file);
       setDownloadUrl(url);
 
-      const filename = `converted-${new Date().getTime()}.pdf`;
+      // Create a hidden link and trigger a simulated click
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename);
+      link.download = filename;
       link.style.display = 'none';
       
       document.body.appendChild(link);
-      link.click();
       
-      // Cleanup after a long delay to ensure manual download is possible 
-      // and automatic download has started
+      // Use MouseEvent for more robust triggering in strict environments
+      const clickEvent = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true
+      });
+      link.dispatchEvent(clickEvent);
+      
+      // Keep in DOM for a significant time and don't revoke URL yet
       setTimeout(() => {
         if (document.body.contains(link)) {
           document.body.removeChild(link);
         }
-      }, 5000);
+      }, 10000);
       
     } catch (err) {
       console.error("Conversion failed:", err);
