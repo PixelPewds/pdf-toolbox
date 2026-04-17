@@ -1,6 +1,6 @@
 # Roadmap: PDF Toolbox
 
-## Phase 1: Core Dashboard & Infrastructure
+## Phase 1: Core Dashboard & Infrastructure [COMPLETED]
 **Goal:** Setup basic layout, routing, and a styling system based on glassmorphism and modern typography. Create the central hub where users select standard tools.
 
 ## Phase 2: Image to PDF Converter
