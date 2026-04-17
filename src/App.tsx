@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Layout from './components/layout/layout';
-import Dashboard from './pages/dashboard';
+import Layout from './components/Layout/Layout';
+import Dashboard from './pages/Dashboard';
 import ImageToPdf from './pages/tools/image-to-pdf';
 
 function App() {

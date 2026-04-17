@@ -1,6 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
 import { Layers } from 'lucide-react';
-import styles from './layout.module.css';
+import styles from './Layout.module.css';
 
 export default function Layout() {
   return (
@@ -14,7 +14,7 @@ export default function Layout() {
         </div>
         <nav className={styles.nav}>
           <Link to="/" className={styles.navLink}>Dashboard</Link>
-          <a href="https://github.com/PixelPewds/pdf-toolkit" target="_blank" rel="noreferrer" className={styles.navLink}>GitHub</a>
+          <a href="https://github.com/PixelPewds/pdf-toolbox" target="_blank" rel="noreferrer" className={styles.navLink}>GitHub</a>
         </nav>
       </header>
       
