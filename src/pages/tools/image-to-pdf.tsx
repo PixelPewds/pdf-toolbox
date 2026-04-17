@@ -9,6 +9,7 @@ const ImageToPdf: React.FC = () => {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFilesSelected = (files: File[]) => {
@@ -34,42 +35,46 @@ const ImageToPdf: React.FC = () => {
   };
 
   const handleConvert = async () => {
-    console.log("Conversion button clicked. Selected files:", selectedFiles.length);
     if (selectedFiles.length === 0) return;
 
     setIsProcessing(true);
     setError(null);
-    console.log("Processing state set to true");
+    
+    // Revoke previous URL if it exists
+    if (downloadUrl) {
+      URL.revokeObjectURL(downloadUrl);
+      setDownloadUrl(null);
+    }
 
     try {
-      console.log("Calling convertImagesToPdf utility...");
       const pdfBytes = await convertImagesToPdf(selectedFiles);
-      console.log("PDF bytes generated. Length:", pdfBytes.length);
       
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+
+      const filename = `converted-${new Date().getTime()}.pdf`;
       const link = document.createElement('a');
       link.href = url;
-      link.download = `converted-${new Date().getTime()}.pdf`;
-      console.log("Download link created with URL:", url);
+      link.setAttribute('download', filename);
+      link.style.display = 'none';
       
       document.body.appendChild(link);
       link.click();
-      console.log("Download link clicked");
       
-      // Delay removal and revocation slightly to ensure browser picks it up
+      // Cleanup after a long delay to ensure manual download is possible 
+      // and automatic download has started
       setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        console.log("Link removed and URL revoked");
-      }, 100);
+        if (document.body.contains(link)) {
+          document.body.removeChild(link);
+        }
+      }, 5000);
       
     } catch (err) {
-      console.error("Conversion failed error:", err);
+      console.error("Conversion failed:", err);
       setError("An error occurred during PDF generation. Please try again.");
     } finally {
       setIsProcessing(false);
-      console.log("Processing state set to false");
     }
   };
 
@@ -152,10 +157,22 @@ const ImageToPdf: React.FC = () => {
               ) : (
                 <>
                   <Download size={20} />
-                  Convert to PDF
+                  {downloadUrl ? 'Regenerate PDF' : 'Convert to PDF'}
                 </>
               )}
             </button>
+
+            {downloadUrl && !isProcessing && (
+              <a 
+                href={downloadUrl} 
+                download={`converted-${new Date().getTime()}.pdf`}
+                className={styles.downloadLink}
+              >
+                <Download size={18} />
+                Download PDF Ready
+              </a>
+            )}
+            
             <p className={styles.privacyNote}>No files leave your browser. Privacy is guaranteed.</p>
           </div>
         </div>
