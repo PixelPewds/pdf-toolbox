@@ -1,6 +1,6 @@
 import { ImagePlus, PenTool, Combine, SplitSquareHorizontal, FileArchive } from 'lucide-react';
-import ToolCard from '../components/UI/ToolCard';
-import styles from './Dashboard.module.css';
+import ToolCard from '../components/ui/tool-card';
+import styles from './dashboard.module.css';
 
 const tools = [
   {

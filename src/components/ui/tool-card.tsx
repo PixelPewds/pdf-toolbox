@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import styles from './ToolCard.module.css';
+import styles from './tool-card.module.css';
 
 interface ToolCardProps {
   title: string;

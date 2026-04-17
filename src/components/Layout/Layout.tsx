@@ -1,6 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
 import { Layers } from 'lucide-react';
-import styles from './Layout.module.css';
+import styles from './layout.module.css';
 
 export default function Layout() {
   return (
