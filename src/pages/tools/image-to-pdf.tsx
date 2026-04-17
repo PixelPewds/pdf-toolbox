@@ -34,28 +34,42 @@ const ImageToPdf: React.FC = () => {
   };
 
   const handleConvert = async () => {
+    console.log("Conversion button clicked. Selected files:", selectedFiles.length);
     if (selectedFiles.length === 0) return;
 
     setIsProcessing(true);
     setError(null);
+    console.log("Processing state set to true");
 
     try {
+      console.log("Calling convertImagesToPdf utility...");
       const pdfBytes = await convertImagesToPdf(selectedFiles);
+      console.log("PDF bytes generated. Length:", pdfBytes.length);
       
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `converted-${new Date().getTime()}.pdf`;
+      console.log("Download link created with URL:", url);
+      
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      console.log("Download link clicked");
+      
+      // Delay removal and revocation slightly to ensure browser picks it up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        console.log("Link removed and URL revoked");
+      }, 100);
+      
     } catch (err) {
-      console.error(err);
+      console.error("Conversion failed error:", err);
       setError("An error occurred during PDF generation. Please try again.");
     } finally {
       setIsProcessing(false);
+      console.log("Processing state set to false");
     }
   };
 

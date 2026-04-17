@@ -5,35 +5,41 @@ import { PDFDocument } from 'pdf-lib';
  * Each image is placed on its own page using its original aspect ratio.
  */
 export async function convertImagesToPdf(files: File[]): Promise<Uint8Array> {
+  console.log("Utility: Creating PDF document...");
   const pdfDoc = await PDFDocument.create();
 
-  for (const file of files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    console.log(`Utility: Processing file ${i + 1}/${files.length}: ${file.name}`);
+    
     const arrayBuffer = await file.arrayBuffer();
+    console.log(`Utility: ArrayBuffer loaded for ${file.name}, size: ${arrayBuffer.byteLength}`);
+    
     let image;
-
     if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
       image = await pdfDoc.embedJpg(arrayBuffer);
     } else if (file.type === 'image/png') {
       image = await pdfDoc.embedPng(arrayBuffer);
     } else {
-      console.warn(`Unsupported file type: ${file.type}`);
+      console.warn(`Utility: Unsupported file type: ${file.type}`);
       continue;
     }
 
-    // Original dimensions
     const { width, height } = image.size();
+    console.log(`Utility: Image embedded, dimensions: ${width}x${height}`);
     
-    // Add a page with the same dimensions as the image
     const page = pdfDoc.addPage([width, height]);
-
-    // Draw the image to fill the page
     page.drawImage(image, {
       x: 0,
       y: 0,
       width: width,
       height: height,
     });
+    console.log(`Utility: Page added for ${file.name}`);
   }
 
-  return await pdfDoc.save();
+  console.log("Utility: Saving PDF...");
+  const bytes = await pdfDoc.save();
+  console.log("Utility: PDF saved, bytes length:", bytes.length);
+  return bytes;
 }
