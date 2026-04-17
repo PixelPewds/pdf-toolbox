@@ -1,7 +1,12 @@
-{
   "name": "pdf-toolbox",
-  "private": true,
-  "version": "0.0.0",
+  "private": false,
+  "version": "1.0.0",
+  "description": "A privacy-focused, client-side PDF manipulation toolkit.",
+  "author": "Prasan <github.com/PixelPewds>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PixelPewds/pdf-toolkit.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "set BROWSER=\"C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe\" && vite",
