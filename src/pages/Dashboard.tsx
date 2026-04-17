@@ -1,4 +1,5 @@
-import { ImagePlus, PenTool, Combine, SplitSquareHorizontal, FileArchive, LucideIcon } from 'lucide-react';
+import { ImagePlus, PenTool, Combine, SplitSquareHorizontal, FileArchive } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import ToolCard from '../components/ui/tool-card';
 import styles from './dashboard.module.css';
 

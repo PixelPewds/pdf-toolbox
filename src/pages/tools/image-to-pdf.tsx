@@ -50,7 +50,7 @@ const ImageToPdf: React.FC = () => {
       const pdfBytes = await convertImagesToPdf(selectedFiles);
       
       const filename = `toolbox-${new Date().getTime()}.pdf`;
-      const file = new File([pdfBytes], filename, { type: 'application/pdf' });
+      const file = new File([pdfBytes.buffer as ArrayBuffer], filename, { type: 'application/pdf' });
       const url = URL.createObjectURL(file);
       setDownloadUrl(url);
 
