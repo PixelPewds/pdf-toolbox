@@ -22,7 +22,7 @@ const tools: ToolItem[] = [
   {
     id: 'pdf-editor',
     title: 'PDF Editor',
-    description: 'View and annotate PDFs natively in your browser with privacy intact.',
+    description: 'Edit existing PDF text with detected font size, family, and styling in your browser.',
     icon: PenTool,
     to: '/tools/editor'
   },
@@ -69,7 +69,7 @@ export default function Dashboard() {
             description={tool.description}
             icon={tool.icon}
             to={tool.to}
-            isComingSoon={tool.id !== 'image-to-pdf'}
+            isComingSoon={tool.id !== 'image-to-pdf' && tool.id !== 'pdf-editor'}
           />
         ))}
       </section>

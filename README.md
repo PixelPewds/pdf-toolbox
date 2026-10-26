@@ -7,7 +7,7 @@ A premium, privacy-focused suite of PDF manipulation tools that run **100% in yo
 ## ✨ Features
 
 - **🖼️ Image to PDF**: Convert JPG and PNG images into high-quality PDF documents.
-- **✏️ PDF Editor (Coming Soon)**: View and annotate PDFs natively in the browser.
+- **✏️ PDF Editor**: Edit selectable PDF text with detected font size, family, and styling in the browser.
 - **🔀 Merge & Split (Roadmap)**: Combine multiple PDFs or extract pages with ease.
 - **📉 PDF Compression (Roadmap)**: Reduce file sizes while preserving optimal quality.
 
