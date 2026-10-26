@@ -20,6 +20,10 @@
   box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.2);
 }
 
+.interactive:focus-visible {
+  border-color: var(--accent-primary);
+}
+
 .interactive::before {
   content: '';
   position: absolute;

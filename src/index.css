@@ -12,6 +12,11 @@
   --accent-primary: #a855f7;
   --accent-secondary: #ec4899;
   --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  --primary: var(--accent-primary);
+  --primary-rgb: 168, 85, 247;
+  --accent-border: rgba(168, 85, 247, 0.45);
+  --text-main: var(--text-primary);
+  --text-muted: var(--text-secondary);
   
   /* Glassmorphism System */
   --glass-bg: rgba(24, 24, 27, 0.4);
@@ -89,6 +94,29 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-primary:active {
   transform: translateY(0) scale(0.98);
+}
+
+button,
+a,
+input,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* App Skeleton */

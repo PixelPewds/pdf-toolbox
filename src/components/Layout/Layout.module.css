@@ -50,6 +50,12 @@
   color: var(--text-primary);
 }
 
+.navLink:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .main {
   flex: 1;
   display: flex;
@@ -62,4 +68,24 @@
   color: var(--text-secondary);
   font-size: 0.875rem;
   padding-bottom: 1rem;
+}
+
+@media (max-width: 560px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .header {
+    padding: 0.875rem 1rem;
+    top: 1rem;
+  }
+
+  .logoText {
+    font-size: 1.25rem;
+  }
+
+  .nav {
+    gap: 0.875rem;
+    font-size: 0.875rem;
+  }
 }

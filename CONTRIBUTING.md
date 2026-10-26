@@ -5,7 +5,7 @@ Thank you for your interest in contributing to PDF Toolbox! We welcome contribut
 ## How Can I Contribute?
 
 ### Reporting Bugs
-- Use the [GitHub Issue Tracker](https://github.com/PixelPewds/pdf-toolkit/issues).
+- Use the [GitHub Issue Tracker](https://github.com/PixelPewds/pdf-toolbox/issues).
 - Provide a clear and descriptive title.
 - Describe the steps to reproduce the bug.
 - Mention your browser and operating system.

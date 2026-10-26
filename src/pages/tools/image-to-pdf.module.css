@@ -23,6 +23,15 @@
   color: var(--primary);
 }
 
+.backButton:focus-visible,
+.clearButton:focus-visible,
+.removeButton:focus-visible,
+.convertButton:focus-visible,
+.downloadLink:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 3px;
+}
+
 .header {
   margin-bottom: 3rem;
   text-align: center;
@@ -301,5 +310,32 @@
   
   .actionSection {
     position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1.25rem;
+  }
+
+  .title {
+    font-size: 2.25rem;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .card,
+  .fileListSection {
+    padding: 1.25rem;
+  }
+
+  .fileInfo {
+    min-width: 0;
+  }
+
+  .fileName {
+    max-width: min(55vw, 220px);
   }
 }

@@ -10,7 +10,7 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "set BROWSER=\"C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe\" && vite",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

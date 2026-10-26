@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useId, useState } from 'react';
 import { Upload } from 'lucide-react';
 import styles from './file-upload.module.css';
 
@@ -10,10 +10,11 @@ interface FileUploadProps {
 
 const FileUpload: React.FC<FileUploadProps> = ({ 
   onFilesSelected, 
-  accept = "image/png, image/jpeg",
+  accept = ".png,.jpg,.jpeg,image/png,image/jpeg",
   multiple = true 
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const inputId = useId();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -22,7 +23,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setIsDragging(false);
+    }
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -39,6 +42,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
       onFilesSelected(files);
+      // Allow selecting the same file again after removing it.
+      e.target.value = '';
     }
   };
 
@@ -51,13 +56,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
     >
       <input
         type="file"
-        id="fileInput"
+        id={inputId}
         className={styles.hiddenInput}
         accept={accept}
         multiple={multiple}
         onChange={handleFileInput}
       />
-      <label htmlFor="fileInput" className={styles.label}>
+      <label htmlFor={inputId} className={styles.label}>
         <div className={styles.iconWrapper}>
           <Upload className={styles.icon} />
         </div>
