@@ -2,14 +2,29 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
-import { AlertCircle, ArrowLeft, Download, FileText, LoaderCircle, Upload, X } from 'lucide-react';
+import { createWorker } from 'tesseract.js';
+import tesseractWorkerUrl from 'tesseract.js/dist/worker.min.js?url';
+import tesseractCoreUrl from 'tesseract.js-core/tesseract-core-lstm.wasm.js?url';
+import englishDataUrl from '@tesseract.js-data/eng/4.0.0/eng.traineddata.gz?url';
+import { AlertCircle, ArrowLeft, Download, FileText, LoaderCircle, Minus, Plus, ScanText, Upload, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './pdf-editor.module.css';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-const RENDER_SCALE = 1.25;
+const RENDER_SCALE = 1.5;
 const MAX_PDF_SIZE = 100 * 1024 * 1024;
+const TESSERACT_LANGUAGE_PATH = englishDataUrl.slice(0, englishDataUrl.lastIndexOf('/'));
+
+function createLocalOcrWorker(onProgress: (progress: number) => void) {
+  return createWorker('eng', undefined, {
+    logger: (message) => onProgress(Math.round(message.progress * 100)),
+    workerPath: tesseractWorkerUrl,
+    corePath: tesseractCoreUrl,
+    langPath: TESSERACT_LANGUAGE_PATH,
+    gzip: true,
+  });
+}
 
 type FontStyle = {
   ascent?: number;
@@ -34,6 +49,7 @@ type TextBlock = {
   fontType: string;
   fontWeight: '400' | '700';
   fontStyle: 'normal' | 'italic';
+  source: 'pdf' | 'ocr';
 };
 
 type EditorPage = {
@@ -119,14 +135,64 @@ function formatFileSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+async function getOcrBlocks(
+  page: Awaited<ReturnType<Awaited<ReturnType<typeof getDocument>['promise']>['getPage']>>,
+  pageNumber: number,
+  worker: Awaited<ReturnType<typeof createWorker>>,
+): Promise<TextBlock[]> {
+  const viewport = page.getViewport({ scale: RENDER_SCALE });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const context = canvas.getContext('2d');
+  if (!context) return [];
+
+  await page.render({ canvas, canvasContext: context, viewport }).promise;
+  const result = await worker.recognize(canvas);
+  const pageHeight = viewport.height / RENDER_SCALE;
+  const lines = result.data.blocks?.flatMap((block) => block.paragraphs.flatMap((paragraph) => paragraph.lines)) ?? [];
+
+  return lines
+    .filter((line) => line.text.trim() && line.confidence >= 35)
+    .map((line, index) => {
+      const width = line.bbox.x1 - line.bbox.x0;
+      const height = line.bbox.y1 - line.bbox.y0;
+      const fontSize = Math.max(6, height / RENDER_SCALE);
+      const pdfX = line.bbox.x0 / RENDER_SCALE;
+      const pdfY = pageHeight - line.bbox.y1 / RENDER_SCALE + fontSize * 0.18;
+
+      return {
+        id: `${pageNumber}-ocr-${index}`,
+        pageNumber,
+        text: line.text.trim(),
+        pdfX,
+        pdfY,
+        pdfWidth: width / RENDER_SCALE,
+        pdfFontSize: fontSize,
+        rotation: 0,
+        left: line.bbox.x0,
+        top: line.bbox.y0,
+        width,
+        height,
+        fontFamily: 'sans-serif',
+        fontType: 'OCR estimate',
+        fontWeight: '400' as const,
+        fontStyle: 'normal' as const,
+        source: 'ocr' as const,
+      };
+    });
+}
+
 export default function PdfEditor() {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<EditorPage[]>([]);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pageScales, setPageScales] = useState<Record<number, number>>({});
+  const [zoom, setZoom] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Reading PDF text and styles...');
+  const [ocrProgress, setOcrProgress] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [downloadName, setDownloadName] = useState('edited-document.pdf');
@@ -134,7 +200,6 @@ export default function PdfEditor() {
   const pdfBytes = useRef<Uint8Array | null>(null);
   const documentRef = useRef<Awaited<ReturnType<typeof getDocument>['promise']> | null>(null);
   const canvasRefs = useRef<Record<number, HTMLCanvasElement | null>>({});
-  const pageRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const allBlocks = pages.flatMap((page) => page.blocks);
@@ -146,27 +211,6 @@ export default function PdfEditor() {
       if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     };
   }, [downloadUrl]);
-
-  useEffect(() => {
-    const observers: ResizeObserver[] = [];
-
-    for (const page of pages) {
-      const element = pageRefs.current[page.pageNumber];
-      if (!element) continue;
-
-      const observer = new ResizeObserver(([entry]) => {
-        const scale = entry.contentRect.width / page.width;
-        setPageScales((current) => {
-          if (Math.abs((current[page.pageNumber] ?? 0) - scale) < 0.001) return current;
-          return { ...current, [page.pageNumber]: scale };
-        });
-      });
-      observer.observe(element);
-      observers.push(observer);
-    }
-
-    return () => observers.forEach((observer) => observer.disconnect());
-  }, [pages]);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,6 +258,9 @@ export default function PdfEditor() {
     setEdits({});
     setSelectedId(null);
     setDownloadUrl(null);
+    setZoom(1);
+    setOcrProgress(null);
+    setLoadingMessage('Reading PDF text and styles...');
 
     try {
       const bytes = new Uint8Array(await nextFile.arrayBuffer());
@@ -221,41 +268,55 @@ export default function PdfEditor() {
       const documentProxy = await getDocument({ data: bytes }).promise;
       documentRef.current = documentProxy;
       const nextPages: EditorPage[] = [];
+      let ocrWorker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
-      for (let pageNumber = 1; pageNumber <= documentProxy.numPages; pageNumber += 1) {
-        const page = await documentProxy.getPage(pageNumber);
-        const viewport = page.getViewport({ scale: RENDER_SCALE });
-        const content = await page.getTextContent();
-        const blocks: TextBlock[] = [];
+      try {
+        for (let pageNumber = 1; pageNumber <= documentProxy.numPages; pageNumber += 1) {
+          const page = await documentProxy.getPage(pageNumber);
+          const viewport = page.getViewport({ scale: RENDER_SCALE });
+          const content = await page.getTextContent();
+          const blocks: TextBlock[] = [];
 
-        content.items.forEach((rawItem, itemIndex) => {
-          if (!isTextItem(rawItem) || !rawItem.str.trim()) return;
+          content.items.forEach((rawItem, itemIndex) => {
+            if (!isTextItem(rawItem) || !rawItem.str.trim()) return;
 
-          const style = content.styles[rawItem.fontName] as FontStyle | undefined;
-          const transformed = multiplyTransforms(viewport.transform, rawItem.transform);
-          const fontSize = Math.max(1, Math.hypot(transformed[2], transformed[3]));
-          const ascent = style?.ascent ?? 0.8;
-          const rotation = Math.atan2(transformed[1], transformed[0]) * (180 / Math.PI);
-          const fontDetails = getFontDetails(rawItem.fontName, style);
+            const style = content.styles[rawItem.fontName] as FontStyle | undefined;
+            const transformed = multiplyTransforms(viewport.transform, rawItem.transform);
+            const fontSize = Math.max(1, Math.hypot(transformed[2], transformed[3]));
+            const ascent = style?.ascent ?? 0.8;
+            const rotation = Math.atan2(transformed[1], transformed[0]) * (180 / Math.PI);
+            const fontDetails = getFontDetails(rawItem.fontName, style);
 
-          blocks.push({
-            id: `${pageNumber}-${itemIndex}`,
-            pageNumber,
-            text: rawItem.str,
-            pdfX: rawItem.transform[4],
-            pdfY: rawItem.transform[5],
-            pdfWidth: rawItem.width,
-            pdfFontSize: Math.max(1, Math.hypot(rawItem.transform[2], rawItem.transform[3])),
-            rotation,
-            left: transformed[4],
-            top: transformed[5] - fontSize * ascent,
-            width: Math.max(rawItem.width * RENDER_SCALE, fontSize * 0.5),
-            height: Math.max(fontSize * 1.2, rawItem.height * RENDER_SCALE),
-            ...fontDetails,
+            blocks.push({
+              id: `${pageNumber}-${itemIndex}`,
+              pageNumber,
+              text: rawItem.str,
+              pdfX: rawItem.transform[4],
+              pdfY: rawItem.transform[5],
+              pdfWidth: rawItem.width,
+              pdfFontSize: Math.max(1, Math.hypot(rawItem.transform[2], rawItem.transform[3])),
+              rotation,
+              left: transformed[4],
+              top: transformed[5] - fontSize * ascent,
+              width: Math.max(rawItem.width * RENDER_SCALE, fontSize * 0.5),
+              height: Math.max(fontSize * 1.2, rawItem.height * RENDER_SCALE),
+              ...fontDetails,
+              source: 'pdf',
+            });
           });
-        });
 
-        nextPages.push({ pageNumber, width: viewport.width, height: viewport.height, blocks });
+          if (blocks.length === 0) {
+            setLoadingMessage(`Scanning page ${pageNumber} with OCR...`);
+            if (!ocrWorker) {
+              ocrWorker = await createLocalOcrWorker((progress) => setOcrProgress(progress));
+            }
+            blocks.push(...await getOcrBlocks(page, pageNumber, ocrWorker));
+          }
+
+          nextPages.push({ pageNumber, width: viewport.width, height: viewport.height, blocks });
+        }
+      } finally {
+        if (ocrWorker) await ocrWorker.terminate();
       }
 
       setPages(nextPages);
@@ -263,9 +324,11 @@ export default function PdfEditor() {
       console.error('PDF load failed:', loadError);
       setFile(null);
       pdfBytes.current = null;
+      documentRef.current = null;
       setError('This PDF could not be opened. It may be encrypted or damaged.');
     } finally {
       setIsLoading(false);
+      setOcrProgress(null);
     }
   };
 
@@ -331,6 +394,39 @@ export default function PdfEditor() {
     }
   };
 
+  const scanWithOcr = async () => {
+    if (!documentRef.current) return;
+
+    setIsLoading(true);
+    setLoadingMessage('Running OCR across all pages...');
+    setOcrProgress(0);
+    setError(null);
+    let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
+
+    try {
+      worker = await createLocalOcrWorker((progress) => setOcrProgress(progress));
+      const nextPages: EditorPage[] = [];
+
+      for (let pageNumber = 1; pageNumber <= documentRef.current.numPages; pageNumber += 1) {
+        const page = await documentRef.current.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: RENDER_SCALE });
+        const blocks = await getOcrBlocks(page, pageNumber, worker);
+        nextPages.push({ pageNumber, width: viewport.width, height: viewport.height, blocks });
+      }
+
+      setPages(nextPages);
+      setEdits({});
+      setSelectedId(null);
+    } catch (ocrError) {
+      console.error('OCR failed:', ocrError);
+      setError('OCR could not read this document. Try a clearer scan or a native text PDF.');
+    } finally {
+      if (worker) await worker.terminate();
+      setIsLoading(false);
+      setOcrProgress(null);
+    }
+  };
+
   const clearDocument = () => {
     setFile(null);
     setPages([]);
@@ -375,7 +471,8 @@ export default function PdfEditor() {
 
       {isLoading && (
         <div className={styles.loadingState} role="status">
-          <LoaderCircle className={styles.spinner} size={24} /> Reading PDF text and styles...
+          <LoaderCircle className={styles.spinner} size={24} /> {loadingMessage}
+          {ocrProgress !== null && <span>{ocrProgress}%</span>}
         </div>
       )}
 
@@ -393,40 +490,43 @@ export default function PdfEditor() {
                 <strong>{file.name}</strong>
                 <span>{formatFileSize(file.size)} · {pages.length} page{pages.length === 1 ? '' : 's'}</span>
               </div>
-              <span className={styles.instruction}>Click any detected text to edit it</span>
+              <div className={styles.toolbarActions}>
+                <span className={styles.instruction}>Click a highlighted text region to edit it</span>
+                <div className={styles.zoomControls} aria-label="Zoom controls">
+                  <button type="button" className={styles.ocrButton} disabled={isLoading} onClick={() => void scanWithOcr()} title="Run OCR on all pages"><ScanText size={15} /> OCR</button>
+                  <button type="button" onClick={() => setZoom((current) => Math.max(0.75, current - 0.1))} aria-label="Zoom out"><Minus size={15} /></button>
+                  <span>{Math.round(zoom * 100)}%</span>
+                  <button type="button" onClick={() => setZoom((current) => Math.min(1.75, current + 0.1))} aria-label="Zoom in"><Plus size={15} /></button>
+                </div>
+              </div>
             </div>
 
             <div className={styles.pages}>
               {pages.map((page) => {
-                const scale = pageScales[page.pageNumber] ?? 1;
                 return (
-                  <div
-                    key={page.pageNumber}
-                    ref={(element) => { pageRefs.current[page.pageNumber] = element; }}
-                    className={styles.pageShell}
-                    style={{ aspectRatio: `${page.width} / ${page.height}` }}
-                  >
-                    <canvas
-                      ref={(element) => { canvasRefs.current[page.pageNumber] = element; }}
-                      className={styles.canvas}
-                      aria-label={`Page ${page.pageNumber}`}
-                    />
-                    {page.blocks.map((block) => {
+                  <div key={page.pageNumber} className={styles.pageViewport} style={{ width: page.width * zoom, height: page.height * zoom }}>
+                    <div className={styles.pageSurface} style={{ width: page.width, height: page.height, transform: `scale(${zoom})` }}>
+                      <canvas
+                        ref={(element) => { canvasRefs.current[page.pageNumber] = element; }}
+                        className={styles.canvas}
+                        aria-label={`Page ${page.pageNumber}`}
+                      />
+                      {page.blocks.map((block) => {
                       const isSelected = selectedId === block.id;
                       const value = edits[block.id] ?? block.text;
                       const textStyle = {
-                        left: block.left * scale,
-                        top: block.top * scale,
-                        width: Math.max(block.width * scale, 30),
-                        height: block.height * scale,
-                        fontSize: block.pdfFontSize * scale,
+                        left: block.left,
+                        top: block.top,
+                        width: Math.max(block.width, 30),
+                        height: block.height,
+                        fontSize: block.pdfFontSize,
                         fontFamily: block.fontFamily,
                         fontWeight: block.fontWeight,
                         fontStyle: block.fontStyle,
                         transform: `rotate(${block.rotation}deg)`,
                       };
 
-                      return isSelected ? (
+                        return isSelected ? (
                         <input
                           key={block.id}
                           ref={(element) => {
@@ -458,9 +558,10 @@ export default function PdfEditor() {
                         >
                           {value}
                         </button>
-                      );
-                    })}
-                    <span className={styles.pageNumber}>Page {page.pageNumber}</span>
+                        );
+                      })}
+                      <span className={styles.pageNumber}>Page {page.pageNumber}</span>
+                    </div>
                   </div>
                 );
               })}
